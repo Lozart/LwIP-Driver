@@ -1020,19 +1020,27 @@ static u32_t get_IEEE_phy_speed(XEmacPs *xemacpsp, u32_t phy_addr)
 
        if(phy_identity == MICREL_PHY_IDENTIFIER)
        {
+    	   	   xil_printf("Phy %d is KSZ9031\n\r", phy_addr);
                RetStatus = get_phy_speed_ksz9031(xemacpsp, phy_addr);
        }
-	   else if (phy_identity == JLSEMI_IDENTIFIER) {
+	   else if (phy_identity == JLSEMI_IDENTIFIER)
+	   {
+		   	   xil_printf("Phy %d is JL2121\n\r", phy_addr);
                RetStatus = get_phy_speed_JL2121(xemacpsp, phy_addr);
        }
-	   else if (phy_identity == PHY_REALTEK_IDENTIFIER) {
+	   else if (phy_identity == PHY_REALTEK_IDENTIFIER)
+	   {
+		   	   xil_printf("Phy %d is RTL8211\n\r", phy_addr);
                RetStatus = get_Realtek_phy_speed(xemacpsp, phy_addr);
        }
-	   else if (phy_identity == PHY_YT8531_IDENTIFIER) {
+	   else if (phy_identity == PHY_YT8531_IDENTIFIER)
+	   {
+		   	   xil_printf("Phy %d is YT8531\n\r", phy_addr);
                RetStatus = get_YT8531_phy_speed(xemacpsp, phy_addr);
 	   }
 
-	   else if (phy_identity == PHY_TI_IDENTIFIER) {
+	   else if (phy_identity == PHY_TI_IDENTIFIER)
+	   {
                RetStatus = get_TI_phy_speed(xemacpsp, phy_addr);
        }
 	   else {
