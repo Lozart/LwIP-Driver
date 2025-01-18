@@ -733,8 +733,7 @@ static u32_t get_Realtek_phy_speed(XEmacPs *xemacpsp, u32_t phy_addr)
 	// 1.Industrial Grade：RTL8211FI、RTL8211FDI、RTL8211FI-CG
     // XEmacPs_PhyRead(xemacpsp, phy_addr,0x1A, &status_speed); /* Industrial RTL8211*/
 	// if (status_speed & 0x04) {
-	// 	temp_speed = status_speed & 0x30;  // I级的是0x30/0x20/0x10, C级的是0xc000/0x8000/0x4000
-
+	// 	temp_speed = status_speed & 0x30;  
 	// 	if (temp_speed == 0x20)
 	// 			return 1000;
 	// 	else if(temp_speed == 0x10)
