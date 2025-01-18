@@ -730,7 +730,7 @@ static u32_t get_Realtek_phy_speed(XEmacPs *xemacpsp, u32_t phy_addr)
 	xil_printf("autonegotiation complete \r\n");
 
 
-	// 1.Industrial Grade：RTL8211FI、RTL8211FDI、RTL8211FI-CG
+	// 1.Industrial Grade：RTL8211F
     // XEmacPs_PhyRead(xemacpsp, phy_addr,0x1A, &status_speed); /* Industrial RTL8211*/
 	// if (status_speed & 0x04) {
 	// 	temp_speed = status_speed & 0x30;  
@@ -742,7 +742,7 @@ static u32_t get_Realtek_phy_speed(XEmacPs *xemacpsp, u32_t phy_addr)
 	// 			return 10;
 	// 	}
 
-	// 2.Commercial Grade：RTL8211E、RTL8211F-CG
+	// 2.Commercial Grade：RTL8211E
 	XEmacPs_PhyRead(xemacpsp, phy_addr,IEEE_SPECIFIC_STATUS_REG,&status_speed);
 	if (status_speed & 0x400) {
 		temp_speed = status_speed & IEEE_SPEED_MASK;
