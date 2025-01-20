@@ -677,36 +677,58 @@ static u32_t get_Realtek_phy_speed(XEmacPs *xemacpsp, u32_t phy_addr)
 	u16_t status_speed;
 	u32_t timeout_counter = 0;
 	u32_t temp_speed;
-
-	xil_printf("Start PHY autonegotiation \r\n");
-
-    // XEmacPs_PhyRead(xemacpsp, phy_addr, 0x1F, &control);
-    // XEmacPs_PhyWrite(xemacpsp, phy_addr, 0x1F, 0xD08);
-    // XEmacPs_PhyWrite(xemacpsp, phy_addr, 0x10, 0x5E);
-    // XEmacPs_PhyWrite(xemacpsp, phy_addr, 0x11, 0x109);
-    // XEmacPs_PhyWrite(xemacpsp, phy_addr, 0x1F, 0xA42);
-    // usleep(10);
-
+ 
+	u16_t phy_identity;
+	u32_t RetStatus;
+ 
+    u32_t RTL_SPECIFIC_STATUS_REG;
+    u32_t RTL_LINK_STATUS_MASK;
+    u32_t RTL_SPEED_MASK;
+    u32_t RTL_SPEED_1000;
+    u32_t RTL_SPEED_100;
+    
+    // Confirm the chip type(E or F) and redefine the register address and mask according to the model
+    XEmacPs_PhyRead(xemacpsp, phy_addr, PHY_IDENTIFIER_2_REG,
+					&phy_identity);
+    if (phy_identity == 0XC916) {
+	    xil_printf("Start PHY:RTL8211F autonegotiation\r\n");
+        RTL_SPECIFIC_STATUS_REG = 0X1A;
+        RTL_LINK_STATUS_MASK    = 0x04;
+        RTL_SPEED_MASK          = 0x30;
+        RTL_SPEED_1000          = 0x20;
+        RTL_SPEED_100           = 0x10;
+    }
+    else if (phy_identity == 0XC915) {
+	    xil_printf("Start PHY:RTL8211E autonegotiation\r\n");
+        RTL_SPECIFIC_STATUS_REG = 0X0011;
+        RTL_LINK_STATUS_MASK    = 0x0400;
+        RTL_SPEED_MASK          = 0xC000;
+        RTL_SPEED_1000          = 0x8000;
+        RTL_SPEED_100           = 0x4000;
+    }
+ 
 	XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_AUTONEGO_ADVERTISE_REG, &control);
 	control |= IEEE_ASYMMETRIC_PAUSE_MASK;
 	control |= IEEE_PAUSE_MASK;
 	control |= ADVERTISE_100;
 	control |= ADVERTISE_10;
 	XEmacPs_PhyWrite(xemacpsp, phy_addr, IEEE_AUTONEGO_ADVERTISE_REG, control);
-
-	XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_1000_ADVERTISE_REG_OFFSET, &control);
+ 
+	XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_1000_ADVERTISE_REG_OFFSET,
+					&control);
 	control |= ADVERTISE_1000;
-	XEmacPs_PhyWrite(xemacpsp, phy_addr, IEEE_1000_ADVERTISE_REG_OFFSET, control);
-
+	XEmacPs_PhyWrite(xemacpsp, phy_addr, IEEE_1000_ADVERTISE_REG_OFFSET,
+					control);
+ 
 	XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_CONTROL_REG_OFFSET, &control);
 	control |= IEEE_CTRL_AUTONEGOTIATE_ENABLE;
 	control |= IEEE_STAT_AUTONEGOTIATE_RESTART;
 	XEmacPs_PhyWrite(xemacpsp, phy_addr, IEEE_CONTROL_REG_OFFSET, control);
-
+ 
 	XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_CONTROL_REG_OFFSET, &control);
 	control |= IEEE_CTRL_RESET_MASK;
 	XEmacPs_PhyWrite(xemacpsp, phy_addr, IEEE_CONTROL_REG_OFFSET, control);
-
+ 
 	while (1) {
 		XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_CONTROL_REG_OFFSET, &control);
 		if (control & IEEE_CTRL_RESET_MASK)
@@ -714,48 +736,37 @@ static u32_t get_Realtek_phy_speed(XEmacPs *xemacpsp, u32_t phy_addr)
 		else
 			break;
 	}
-
+ 
 	XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_STATUS_REG_OFFSET, &status);
+ 
 	xil_printf("Waiting for PHY to complete autonegotiation.\r\n");
-
+ 
 	while ( !(status & IEEE_STAT_AUTONEGOTIATE_COMPLETE) ) {
 		sleep(1);
 		timeout_counter++;
-		if (timeout_counter == 30) {
-				xil_printf("Auto negotiation error \r\n");
-				return XST_FAILURE;
+		if (timeout_counter == 5) {
+			xil_printf("Auto negotiation error \r\n");
+			return XST_FAILURE;
 		}
 		XEmacPs_PhyRead(xemacpsp, phy_addr, IEEE_STATUS_REG_OFFSET, &status);
 	}
 	xil_printf("autonegotiation complete \r\n");
-
-
-	// 1.Industrial Grade：RTL8211F
-    // XEmacPs_PhyRead(xemacpsp, phy_addr,0x1A, &status_speed); /* Industrial RTL8211*/
-	// if (status_speed & 0x04) {
-	// 	temp_speed = status_speed & 0x30;  
-	// 	if (temp_speed == 0x20)
-	// 			return 1000;
-	// 	else if(temp_speed == 0x10)
-	// 			return 100;
-	// 	else
-	// 			return 10;
-	// 	}
-
-	// 2.Commercial Grade：RTL8211E
-	XEmacPs_PhyRead(xemacpsp, phy_addr,IEEE_SPECIFIC_STATUS_REG,&status_speed);
-	if (status_speed & 0x400) {
-		temp_speed = status_speed & IEEE_SPEED_MASK;
-
-		if (temp_speed == IEEE_SPEED_1000)
+    
+    // Using redefined register addresses and masks
+	XEmacPs_PhyRead(xemacpsp, phy_addr,RTL_SPECIFIC_STATUS_REG,
+					&status_speed);
+	if (status_speed & RTL_LINK_STATUS_MASK) {
+		temp_speed = status_speed & RTL_SPEED_MASK;
+ 
+		if (temp_speed == RTL_SPEED_1000)
 			return 1000;
-		else if(temp_speed == IEEE_SPEED_100)
+		else if(temp_speed == RTL_SPEED_100)
 			return 100;
 		else
 			return 10;
 	}
-
-	return XST_SUCCESS;
+ 
+	return XST_FAILURE;
 }
 
 // get phy speed function for ksz9031
